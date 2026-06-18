@@ -6,310 +6,317 @@
   <title>オートリピートタイマー</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Tailwind Config -->
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
-            mono: ['JetBrains Mono', 'SFMono-Regular', 'monospace'],
-          }
-        }
-      }
-    }
-  </script>
-  <!-- Lucide Icons CDN -->
+  <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  
   <style>
-    /* スクロールバーの非表示 */
-    ::-webkit-scrollbar {
-      width: 4px;
+    body {
+      font-family: 'Inter', sans-serif;
     }
-    ::-webkit-scrollbar-track {
-      background: #0f172a;
+    .font-mono {
+      font-family: 'JetBrains Mono', monospace;
     }
-    ::-webkit-scrollbar-thumb {
-      background: #334155;
-      border-radius: 4px;
-    }
-    /* iOSでのインプット調整 */
-    input[type="number"] {
-      -moz-appearance: textfield;
-    }
+    /* Hide input arrows */
     input[type="number"]::-webkit-outer-spin-button,
     input[type="number"]::-webkit-inner-spin-button {
       -webkit-appearance: none;
       margin: 0;
     }
+    input[type="number"] {
+      -moz-appearance: textfield;
+    }
   </style>
 </head>
-<body class="bg-slate-950 text-slate-100 font-sans min-h-screen flex items-center justify-center p-4 selection:bg-indigo-500/30">
+<body class="bg-slate-950 text-slate-100 min-h-screen flex items-center justify-center p-4">
 
-  <div class="w-full max-w-md relative">
+  <!-- MAIN APP CONTAINER -->
+  <div class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-[2rem] p-6 shadow-2xl relative overflow-hidden">
     
-    <!-- ================= MAIN SCREEN ================= -->
-    <div id="main-screen" class="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl flex flex-col gap-6">
-      
-      <!-- タイトル & 設定移動ボタン -->
-      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-        <div class="flex items-center gap-2">
-          <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-          <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-1.5">
-            オートリピートタイマー
-          </h1>
-        </div>
-        <button onclick="switchView('settings')" class="p-2 py-1.5 bg-slate-800 hover:bg-indigo-600 hover:text-white rounded-xl transition duration-150 flex items-center gap-1.5 text-slate-300 text-xs">
-          <i data-lucide="settings" class="w-4 h-4"></i>
-          <span>時間変更</span>
-        </button>
+    <!-- HEADER BAR -->
+    <div class="flex items-center justify-between border-b border-slate-850 pb-4 mb-5">
+      <div class="flex items-center gap-2">
+        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+        <h1 class="text-base font-bold tracking-tight text-white">オートリピートタイマー</h1>
       </div>
+      <button id="toggle-view-btn" class="py-1.5 px-3 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl transition flex items-center gap-1">
+        <i data-lucide="settings" class="w-4 h-4"></i>
+        <span>時間・音設定</span>
+      </button>
+    </div>
 
-      <!-- アラート名表示 -->
-      <div id="label-display-container" class="text-center">
-        <span id="label-display" class="inline-flex items-center gap-1 px-3 py-1 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs rounded-full font-medium">
+    <!-- MAIN TIMER SCREEN -->
+    <div id="main-screen" class="space-y-6">
+      
+      <!-- Alert Tag Display -->
+      <div class="text-center">
+        <span id="display-label" class="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs rounded-full font-medium">
           <i data-lucide="bell" class="w-3.5 h-3.5"></i>
-          <span id="txt-display-label">作業インターバル</span>
+          <span id="label-text">作業インターバル</span>
         </span>
       </div>
 
-      <!-- 円形プログレスカウントダウン -->
-      <div class="relative flex justify-center items-center py-4 select-none">
-        <svg class="w-64 h-64 transform -rotate-90">
-          <circle cx="128" cy="128" r="95" class="stroke-slate-800" stroke-width="11" fill="transparent" />
-          <circle id="progress-ring" cx="128" cy="128" r="95" class="stroke-indigo-500 transition-all duration-100" stroke-width="11" fill="transparent" stroke-dasharray="596.9" stroke-dashoffset="0" stroke-linecap="round" />
+      <!-- Circle Progress & Text Display -->
+      <div class="relative flex justify-center items-center py-2 select-none">
+        <svg class="w-64 h-64 -rotate-90">
+          <!-- Background track -->
+          <circle cx="128" cy="128" r="95" class="stroke-slate-800" stroke-width="11" fill="transparent"></circle>
+          <!-- Active Arc bar -->
+          <circle id="progress-bar" cx="128" cy="128" r="95" class="stroke-indigo-500 transition-all duration-350" stroke-width="11" fill="transparent" stroke-dasharray="596.9" stroke-dashoffset="0" stroke-linecap="round"></circle>
         </svg>
 
-        <!-- 時間文字 -->
-        <div class="absolute inset-0 flex flex-col justify-center items-center leading-none">
-          <div id="time-display" class="text-4xl font-mono font-medium tracking-tight text-white mb-2">00:03:00</div>
-          <div class="text-[11px] font-mono text-slate-400">
-            設定: <span id="txt-duration-summary">3分</span>
+        <!-- Centered timer labels -->
+        <div class="absolute inset-0 flex flex-col justify-center items-center text-center">
+          <div id="timer-text" class="text-4xl font-mono font-medium tracking-tight text-white">00:03:00</div>
+          <div class="text-[11px] font-mono text-slate-400 mt-1">
+            設定: <span id="setting-text">3分</span>
           </div>
-          <!-- ループバッジ -->
           <div id="loop-badge" class="hidden mt-3 inline-flex items-center gap-1 px-2.5 py-0.5 bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-mono text-xs font-bold rounded-md">
             <i data-lucide="refresh-cw" class="w-3 h-3 animate-spin"></i>
-            <span>ループ <span id="txt-loop-count">0</span>回目</span>
+            <span>ループ <span id="loop-count-text">0</span>回目</span>
           </div>
         </div>
       </div>
 
-      <!-- 操作ボタン -->
-      <div class="flex justify-center items-center gap-4">
-        <button id="btn-reset" onclick="resetTimer()" disabled class="p-4 rounded-xl bg-slate-950 text-slate-755 border border-slate-900 cursor-not-allowed transition-all duration-150 flex items-center justify-center text-slate-300">
+      <!-- Action controls (Pause / Start / Reset) -->
+      <div class="flex items-center gap-3">
+        <button id="reset-btn" disabled class="p-3.5 bg-slate-950 border border-slate-850 text-slate-705 rounded-xl transition cursor-not-allowed flex items-center justify-center">
           <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
         </button>
-
-        <button id="btn-toggle" onclick="toggleTimer()" class="flex-1 py-4 px-6 rounded-2xl font-semibold text-sm transition-all duration-150 flex items-center justify-center gap-2 text-white shadow-lg bg-indigo-600 hover:bg-indigo-500 active:scale-95">
-          <i data-lucide="play" class="w-4.5 h-4.5"></i>
-          <span id="btn-toggle-text">カウントを開始する</span>
+        <button id="toggle-timer-btn" class="flex-1 py-4 px-6 bg-indigo-600 hover:bg-indigo-550 text-white font-semibold rounded-2xl shadow-lg shadow-indigo-900/30 active:scale-[0.98] transition flex items-center justify-center gap-2">
+          <i data-lucide="play" class="w-5 h-5 fill-current"></i>
+          <span id="toggle-btn-text">カウントを開始する</span>
         </button>
       </div>
 
-      <!-- ステータス案内 -->
-      <div id="status-hint" class="text-center text-[11px] text-slate-500 h-4 select-none">
+      <!-- Status Helper -->
+      <div id="status-helper" class="text-center text-[11px] text-slate-500 select-none">
         開始ボタンを押してスタートしてください。
       </div>
 
-      <!-- リピート履歴 -->
-      <div class="border-t border-slate-800/80 pt-4 mt-1 flex flex-col min-h-0">
+      <!-- Loop Logs -->
+      <div class="border-t border-slate-850 pt-4 mt-2">
         <div class="flex items-center justify-between mb-2">
-          <span class="text-xs font-mono tracking-wider uppercase text-slate-400 flex items-center gap-1">
+          <span class="text-xs font-mono tracking-wider text-slate-400 uppercase flex items-center gap-1">
             <i data-lucide="history" class="w-3.5 h-3.5 text-indigo-400"></i>
             リピート履歴
           </span>
-          <button id="btn-clear-history" onclick="clearHistory()" class="text-[10px] text-slate-500 hover:text-red-400 transition hidden">
-            クリア
-          </button>
+          <button id="clear-logs-btn" class="text-[10px] text-slate-500 hover:text-red-400 transition">クリア</button>
         </div>
-
-        <div id="history-box" class="bg-slate-950/60 rounded-xl max-h-[140px] overflow-y-auto border border-slate-850 p-2 text-slate-400 text-xs min-h-[70px]">
-          <div id="history-placeholder" class="flex items-center justify-center h-16 text-slate-600 text-center">
-            履歴はありません。<br>ゼロになると自動でここに履歴が追加されます。
+        <div id="logs-container" class="bg-slate-950/60 rounded-xl p-2.5 min-h-[100px] max-h-[140px] overflow-y-auto border border-slate-850 text-xs text-slate-400">
+          <div id="no-logs" class="flex items-center justify-center h-16 text-slate-600 font-sans text-center">
+            履歴はありません。<br>ゼロになるとここにループの履歴が追加されます。
           </div>
-          <div id="history-list" class="space-y-1.5 hidden"></div>
+          <div id="logs-list" class="space-y-2 hidden"></div>
         </div>
       </div>
-
     </div>
 
-    <!-- ================= SETTINGS SCREEN ================= -->
-    <div id="settings-screen" class="hidden bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl flex flex-col gap-6 text-slate-100">
-      
-      <!-- ヘッダー -->
-      <div class="flex items-center justify-between border-b border-slate-800 pb-4">
-        <button onclick="switchView('main')" class="p-2 hover:bg-slate-800 rounded-xl transition text-slate-400 hover:text-slate-200">
-          <i data-lucide="arrow-left" class="w-5 h-5"></i>
-        </button>
-        <h2 class="text-xl font-bold tracking-tight text-center flex-1 pr-7">
-          タイマー設定
+    <!-- SETTINGS SCREEN (HIDDEN BY DEFAULT) -->
+    <div id="settings-screen" class="hidden space-y-5">
+      <div class="flex items-center justify-between mb-2">
+        <h2 class="text-md font-bold text-slate-100 flex items-center gap-1.5">
+          <i data-lucide="sliders" class="w-4 h-4 text-indigo-400"></i>
+          設定オプション
         </h2>
       </div>
 
-      <div class="space-y-5">
-        <!-- 時間設定スピン（スマホで極めて押しやすい上下挟み込み配置） -->
-        <div>
-          <label class="text-xs font-mono tracking-wider uppercase text-slate-400 block mb-3 flex items-center gap-1.5">
-            <i data-lucide="clock" class="w-3.5 h-3.5 text-indigo-400"></i>
-            カウント時間設定
-          </label>
+      <!-- Large Hand-friendly Spinners -->
+      <div class="space-y-2">
+        <span class="text-xs font-mono text-slate-400 block">時間設定 (最大240時間まで)</span>
+        <div class="grid grid-cols-3 gap-3 bg-slate-950 p-3 border border-slate-850 rounded-2xl">
           
-          <div class="grid grid-cols-3 gap-3 bg-slate-950 p-4 border border-slate-850 rounded-2xl">
-            <!-- 時間 -->
-            <div class="flex flex-col items-center">
-              <span class="text-[11px] text-slate-500 mb-2">時間 (最大240)</span>
-              <div class="flex flex-col items-center w-full gap-2">
-                <button onclick="adjustField('hours', 1)" class="w-full h-11 flex justify-center items-center bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl text-slate-300">
-                  <i data-lucide="plus" class="w-5 h-5"></i>
-                </button>
-                <input type="number" id="set-hours" min="0" max="240" placeholder="0" class="w-full h-12 text-2xl font-mono font-bold text-indigo-400 text-center bg-slate-950 border border-slate-850 rounded-xl focus:border-indigo-500 focus:outline-none">
-                <button onclick="adjustField('hours', -1)" class="w-full h-11 flex justify-center items-center bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl text-slate-300">
-                  <i data-lucide="minus" class="w-5 h-5"></i>
-                </button>
-              </div>
+          <!-- Hours item -->
+          <div class="flex flex-col items-center">
+            <span class="text-xs text-slate-500 mb-1">時間 (最大240)</span>
+            <div class="flex flex-col items-center w-full gap-2">
+              <button type="button" onclick="adjustTime('h', 1)" class="w-full h-11 bg-slate-900 border border-slate-800 rounded-xl text-slate-300 flex items-center justify-center hover:bg-slate-800 transition active:scale-95"><i data-lucide="plus" class="w-4 h-4"></i></button>
+              <input type="number" id="input-h" min="0" max="240" class="w-full h-12 text-xl font-bold font-mono text-center text-indigo-400 bg-slate-950 border border-slate-850 rounded-xl focus:border-indigo-500 focus:outline-none" value="0">
+              <button type="button" onclick="adjustTime('h', -1)" class="w-full h-11 bg-slate-900 border border-slate-800 rounded-xl text-slate-300 flex items-center justify-center hover:bg-slate-800 transition active:scale-95"><i data-lucide="minus" class="w-4 h-4"></i></button>
             </div>
+          </div>
 
-            <!-- 分 -->
-            <div class="flex flex-col items-center">
-              <span class="text-[11px] text-slate-500 mb-2">分 (1分ずつ)</span>
-              <div class="flex flex-col items-center w-full gap-2">
-                <button onclick="adjustField('minutes', 1)" class="w-full h-11 flex justify-center items-center bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl text-slate-300">
-                  <i data-lucide="plus" class="w-5 h-5"></i>
-                </button>
-                <input type="number" id="set-minutes" min="0" max="59" placeholder="00" class="w-full h-12 text-2xl font-mono font-bold text-indigo-400 text-center bg-slate-950 border border-slate-850 rounded-xl focus:border-indigo-500 focus:outline-none">
-                <button onclick="adjustField('minutes', -1)" class="w-full h-11 flex justify-center items-center bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl text-slate-300">
-                  <i data-lucide="minus" class="w-5 h-5"></i>
-                </button>
-              </div>
+          <!-- Minutes item -->
+          <div class="flex flex-col items-center">
+            <span class="text-xs text-slate-500 mb-1">分</span>
+            <div class="flex flex-col items-center w-full gap-2">
+              <button type="button" onclick="adjustTime('m', 1)" class="w-full h-11 bg-slate-900 border border-slate-800 rounded-xl text-slate-300 flex items-center justify-center hover:bg-slate-800 transition active:scale-95"><i data-lucide="plus" class="w-4 h-4"></i></button>
+              <input type="number" id="input-m" min="0" max="59" class="w-full h-12 text-xl font-bold font-mono text-center text-indigo-400 bg-slate-950 border border-slate-850 rounded-xl focus:border-indigo-500 focus:outline-none" value="3">
+              <button type="button" onclick="adjustTime('m', -1)" class="w-full h-11 bg-slate-900 border border-slate-800 rounded-xl text-slate-300 flex items-center justify-center hover:bg-slate-800 transition active:scale-95"><i data-lucide="minus" class="w-4 h-4"></i></button>
             </div>
+          </div>
 
-            <!-- 秒 -->
-            <div class="flex flex-col items-center">
-              <span class="text-[11px] text-slate-500 mb-2">秒 (1秒ずつ)</span>
-              <div class="flex flex-col items-center w-full gap-2">
-                <button onclick="adjustField('seconds', 1)" class="w-full h-11 flex justify-center items-center bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl text-slate-300">
-                  <i data-lucide="plus" class="w-5 h-5"></i>
-                </button>
-                <input type="number" id="set-seconds" min="0" max="59" placeholder="00" class="w-full h-12 text-2xl font-mono font-bold text-indigo-400 text-center bg-slate-950 border border-slate-850 rounded-xl focus:border-indigo-500 focus:outline-none">
-                <button onclick="adjustField('seconds', -1)" class="w-full h-11 flex justify-center items-center bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl text-slate-300">
-                  <i data-lucide="minus" class="w-5 h-5"></i>
-                </button>
-              </div>
+          <!-- Seconds item -->
+          <div class="flex flex-col items-center">
+            <span class="text-xs text-slate-500 mb-1">秒</span>
+            <div class="flex flex-col items-center w-full gap-2">
+              <button type="button" onclick="adjustTime('s', 1)" class="w-full h-11 bg-slate-900 border border-slate-800 rounded-xl text-slate-300 flex items-center justify-center hover:bg-slate-800 transition active:scale-95"><i data-lucide="plus" class="w-4 h-4"></i></button>
+              <input type="number" id="input-s" min="0" max="59" class="w-full h-12 text-xl font-bold font-mono text-center text-indigo-400 bg-slate-950 border border-slate-850 rounded-xl focus:border-indigo-500 focus:outline-none" value="0">
+              <button type="button" onclick="adjustTime('s', -1)" class="w-full h-11 bg-slate-900 border border-slate-800 rounded-xl text-slate-300 flex items-center justify-center hover:bg-slate-800 transition active:scale-95"><i data-lucide="minus" class="w-4 h-4"></i></button>
             </div>
           </div>
         </div>
-
-        <!-- クイック プリセット -->
-        <div>
-          <span class="text-xs font-mono tracking-wider uppercase text-slate-400 block mb-2">オート プリセット</span>
-          <div class="grid grid-cols-2 gap-2">
-            <button onclick="applyPreset(0, 0, 10)" class="py-2.5 px-3 text-xs text-left bg-slate-950 border border-slate-850 rounded-xl hover:bg-slate-800 text-slate-300">10秒 (テスト)</button>
-            <button onclick="applyPreset(0, 3, 0)" class="py-2.5 px-3 text-xs text-left bg-slate-950 border border-slate-850 rounded-xl hover:bg-slate-800 text-slate-300">3分</button>
-            <button onclick="applyPreset(0, 15, 0)" class="py-2.5 px-3 text-xs text-left bg-slate-950 border border-slate-850 rounded-xl hover:bg-slate-800 text-slate-300">15分</button>
-            <button onclick="applyPreset(0, 25, 0)" class="py-2.5 px-3 text-xs text-left bg-slate-950 border border-slate-850 rounded-xl hover:bg-slate-800 text-slate-300">25分 (ポモドーロ)</button>
-          </div>
-        </div>
-
-        <!-- コメントラベル -->
-        <div>
-          <label class="text-xs font-mono tracking-wider uppercase text-slate-400 block mb-1.5 flex items-center gap-1.5">
-            <i data-lucide="file-text" class="w-3.5 h-3.5 text-indigo-400"></i>
-            アラートメッセージ
-          </label>
-          <input type="text" id="set-label" placeholder="アラートメッセージ（例: 休憩の時間です！）" class="w-full bg-slate-950 border border-slate-850 focus:border-indigo-500 focus:outline-none rounded-xl py-2.5 px-3 text-sm text-slate-100 transition">
-        </div>
-
-        <!-- アラート音声 -->
-        <div>
-          <label class="text-xs font-mono tracking-wider uppercase text-slate-400 block mb-2 flex items-center gap-1.5">
-            <i data-lucide="music" class="w-3.5 h-3.5 text-indigo-400"></i>
-            アラート音
-          </label>
-          <div class="grid grid-cols-2 gap-2">
-            <button onclick="setAudioAndPlay('chime')" id="sound-chime" class="py-3 px-2 text-xs rounded-xl transition border border-indigo-500/25 bg-indigo-500/10 text-indigo-300">チャイム ♪</button>
-            <button onclick="setAudioAndPlay('beep')" id="sound-beep" class="py-3 px-2 text-xs rounded-xl transition border border-slate-850 bg-slate-950 text-slate-400">単音ビープ 📱</button>
-            <button onclick="setAudioAndPlay('pulse')" id="sound-pulse" class="py-3 px-2 text-xs rounded-xl transition border border-slate-850 bg-slate-950 text-slate-400">連続アラート 🚨</button>
-            <button onclick="setAudioAndPlay('silent')" id="sound-silent" class="py-3 px-2 text-xs rounded-xl transition border border-slate-850 bg-slate-950 text-slate-400">無音通知 🔕</button>
-          </div>
-        </div>
-
-        <!-- 決定ボタン -->
-        <button onclick="saveAndApplySettings()" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white rounded-xl font-medium text-sm transition flex items-center justify-center gap-2 mt-4 shadow-lg shadow-indigo-900/30">
-          <i data-lucide="check" class="w-4.5 h-4.5"></i>
-          この時間で設定する
-        </button>
-
       </div>
-    </div>
 
-    <!-- ================= ALERT OVERLAY MODAL ================= -->
-    <div id="alert-overlay" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div onclick="closeAlert()" class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm"></div>
-      
-      <div class="relative w-full max-w-sm bg-slate-900 border border-amber-500/30 shadow-2xl shadow-amber-500/10 rounded-3xl p-6 text-center text-slate-100 overflow-hidden">
-        <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-amber-500 via-indigo-500 to-amber-500"></div>
-
-        <div class="mx-auto w-16 h-16 bg-amber-500/10 text-amber-500 rounded-full flex items-center justify-center mb-4 relative">
-          <span class="absolute inset-0 rounded-full bg-amber-500/20 animate-ping"></span>
-          <i data-lucide="bell" class="w-8 h-8 animate-bounce"></i>
+      <!-- Quick Presets -->
+      <div class="space-y-1.5">
+        <span class="text-xs font-mono text-slate-400 block">プリセット</span>
+        <div class="grid grid-cols-4 gap-2">
+          <button type="button" onclick="applyPreset(0,0,10)" class="py-1.5 px-1 text-[10px] bg-slate-950 hover:bg-slate-800 rounded-lg border border-slate-850 transition">10秒テスト</button>
+          <button type="button" onclick="applyPreset(0,1,0)" class="py-1.5 px-1 text-[10px] bg-slate-950 hover:bg-slate-800 rounded-lg border border-slate-850 transition">1分</button>
+          <button type="button" onclick="applyPreset(0,5,0)" class="py-1.5 px-1 text-[10px] bg-slate-950 hover:bg-slate-800 rounded-lg border border-slate-850 transition">5分</button>
+          <button type="button" onclick="applyPreset(0,25,0)" class="py-1.5 px-1 text-[10px] bg-slate-950 hover:bg-slate-800 rounded-lg border border-slate-850 transition">25分</button>
         </div>
-
-        <h3 id="alert-modal-title" class="text-xl font-bold text-white mb-2">作業インターバル</h3>
-        <p class="text-sm text-slate-400 mb-4">設定した時間が経過しました。</p>
-
-        <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 mb-5 text-left space-y-2">
-          <div class="flex justify-between items-center text-xs">
-            <span class="text-slate-500">完了時刻:</span>
-            <span id="alert-complete-time" class="text-slate-300 font-mono">00:00:00</span>
-          </div>
-          <div class="flex justify-between items-center text-xs border-t border-slate-800/80 pt-2">
-            <span class="text-slate-500">通算ループ:</span>
-            <span id="alert-loop-count" class="font-mono text-emerald-400 font-semibold">1 回目</span>
-          </div>
-          <div class="flex justify-between items-center text-[11px] border-t border-slate-800/80 pt-2 text-indigo-400">
-            <span class="flex items-center gap-1">
-              <i data-lucide="alert-circle" class="w-3 h-3 text-indigo-400"></i>
-              次のカウントダウン
-            </span>
-            <span class="font-mono font-bold">自動進行中: <span id="alert-next-time">00:00</span></span>
-          </div>
-        </div>
-
-        <button onclick="closeAlert()" class="w-full py-3 bg-amber-600 hover:bg-amber-550 active:scale-95 text-white rounded-xl font-medium text-sm shadow-md shadow-amber-900/30 flex items-center justify-center gap-1.5">
-          確認しました
-        </button>
       </div>
+
+      <!-- Message text label setting -->
+      <div class="space-y-1.5">
+        <span class="text-xs font-mono text-slate-400 block">アラートメッセージ</span>
+        <input type="text" id="input-label" class="w-full bg-slate-950 border border-slate-850 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-indigo-500 text-slate-100" placeholder="例: 休憩時間です！" value="作業インターバル">
+      </div>
+
+      <!-- Sound selection -->
+      <div class="space-y-1.5">
+        <span class="text-xs font-mono text-slate-400 block">アラート音</span>
+        <div class="grid grid-cols-2 gap-2">
+          <button type="button" onclick="selectSound('chime')" id="sound-chime" class="py-2 px-3 text-xs bg-indigo-500/10 border border-indigo-500 text-indigo-300 rounded-xl transition">チャイム ♪</button>
+          <button type="button" onclick="selectSound('beep')" id="sound-beep" class="py-2 px-3 text-xs bg-slate-955 border border-slate-850 text-slate-400 rounded-xl transition">ビープ 📱</button>
+          <button type="button" onclick="selectSound('pulse')" id="sound-pulse" class="py-2 px-3 text-xs bg-slate-955 border border-slate-850 text-slate-400 rounded-xl transition">アラーム 🚨</button>
+          <button type="button" onclick="selectSound('silent')" id="sound-silent" class="py-2 px-3 text-xs bg-slate-955 border border-slate-850 text-slate-400 rounded-xl transition">無音（通知のみ） 🔕</button>
+        </div>
+      </div>
+
+      <!-- Smartphone background Notification Activation -->
+      <div class="bg-indigo-950/20 p-4 border border-indigo-900/30 rounded-2xl space-y-2">
+        <div class="flex items-center gap-1.5 text-xs font-semibold text-indigo-400">
+          <i data-lucide="bell" class="w-4 h-4"></i>
+          <span>スマホのバックグラウンド通知の有効化</span>
+        </div>
+        <p class="text-[10px] text-slate-400 leading-normal">
+          アプリを閉じたり、画面をスリープにしても時間到達をプッシュ通知で知らせるために「通知を許可」してください。
+        </p>
+        <button type="button" onclick="requestNotification()" class="w-full py-2 px-3 bg-indigo-600 hover:bg-indigo-550 text-white font-medium text-xs rounded-xl active:scale-95 transition flex items-center justify-center gap-1.5">
+          <i data-lucide="bell" class="w-3.5 h-3.5"></i>
+          スマートフォンの通知を許可する
+        </button>
+        <div class="text-[9px] text-slate-500 leading-relaxed border-t border-slate-850 pt-2 flex items-start gap-1">
+          <i data-lucide="info" class="w-3.5 h-3.5 shrink-0 text-indigo-400 mt-0.5"></i>
+          <span>
+            <strong>iPhoneの方へ:</strong> 共有アイコンから「ホーム画面に追加」を行うことで、スリープ時でも完璧にバックグラウンド通知機能を使用できるようになります。
+          </span>
+        </div>
+      </div>
+
+      <!-- Settings save & back -->
+      <button id="save-settings-btn" class="w-full py-3 bg-indigo-600 hover:bg-indigo-550 text-white font-semibold text-sm rounded-xl transition flex items-center justify-center gap-1.5 shadow-lg shadow-indigo-900/10">
+        <i data-lucide="check" class="w-4 h-4"></i>
+        この設定を保存する
+      </button>
     </div>
 
   </div>
 
+  <!-- OVERLAY DIALOG MODAL ON ALERTS -->
+  <div id="alert-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+    <!-- Backdrop background -->
+    <div id="modal-backdrop" class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm"></div>
+    <!-- Modal interior content -->
+    <div class="relative w-full max-w-sm bg-slate-900 border border-amber-500/30 rounded-3xl p-6 text-center shadow-2xl relative overflow-hidden">
+      <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 via-indigo-500 to-amber-500"></div>
+      
+      <!-- Pulsing ring icon -->
+      <div class="mx-auto w-16 h-16 bg-amber-500/10 text-amber-500 rounded-full flex items-center justify-center mb-4 relative">
+        <span class="absolute inset-0 rounded-full bg-amber-500/20 animate-ping"></span>
+        <i data-lucide="bell" class="w-8 h-8 animate-bounce text-amber-400"></i>
+      </div>
+
+      <h3 id="modal-title" class="text-xl font-bold text-white mb-2">作業インターバル</h3>
+      <p class="text-xs text-slate-400 mb-4">設定した時間が到達しました。</p>
+
+      <div class="bg-slate-950 border border-slate-850 rounded-2xl p-4 text-left space-y-2 text-xs text-slate-300 mb-5">
+        <div class="flex justify-between">
+          <span class="text-slate-500">完了時刻:</span>
+          <span id="modal-time" class="font-mono text-slate-200">12:30:00</span>
+        </div>
+        <div class="flex justify-between border-t border-slate-850 pt-2 text-indigo-400">
+          <span class="flex items-center gap-1">
+            <i data-lucide="alert-circle" class="w-3.5 h-3.5 animate-pulse text-indigo-400"></i>
+            ループオートリサイクル
+          </span>
+          <span id="modal-status-text" class="font-mono font-bold">自動裏進行中...</span>
+        </div>
+      </div>
+
+      <button id="modal-close-btn" class="w-full py-3 bg-amber-600 hover:bg-amber-550 active:scale-95 text-white font-semibold text-sm rounded-xl shadow-lg transition">
+        閉じる
+      </button>
+    </div>
+  </div>
+
+  <!-- PLAYBACK & BEHAVIOR SCRIPT -->
   <script>
-    // --- APP STATE ---
-    let timerState = {
-      hours: 0,
-      minutes: 3,
-      seconds: 0
-    };
-    let soundType = 'chime';
-    let labelText = '作業インターバル';
-    let loopCount = 0;
-    let timeLeft = 180; // in seconds
+    // System Variables
+    let totalSeconds = 180; // 3 mins default
+    let timeLeft = 180;
     let isRunning = false;
     let timerInterval = null;
-    let alertLogs = [];
+    let loopCount = 0;
+    let alertSound = 'chime';
+    let alertLabel = '作業インターバル';
+    let logs = [];
+    let backgroundTimeStamp = null;
 
-    // --- SOUND ENGINE (Web Audio API Synthesizer) ---
-    function playSound(type) {
+    // View Switching State
+    let viewMode = 'main'; // 'main' or 'settings'
+
+    // Init UI elements references
+    const progressBar = document.getElementById('progress-bar');
+    const timerText = document.getElementById('timer-text');
+    const settingText = document.getElementById('setting-text');
+    const loopBadge = document.getElementById('loop-badge');
+    const loopCountText = document.getElementById('loop-count-text');
+    const toggleTimerBtn = document.getElementById('toggle-timer-btn');
+    const toggleBtnText = document.getElementById('toggle-btn-text');
+    const resetBtn = document.getElementById('reset-btn');
+    const statusHelper = document.getElementById('status-helper');
+    
+    const displayLabel = document.getElementById('display-label');
+    const labelText = document.getElementById('label-text');
+    const toggleViewBtn = document.getElementById('toggle-view-btn');
+    
+    const mainScreen = document.getElementById('main-screen');
+    const settingsScreen = document.getElementById('settings-screen');
+    
+    const saveSettingsTrigger = document.getElementById('save-settings-btn');
+    const clearLogsBtn = document.getElementById('clear-logs-btn');
+    
+    // Inputs
+    const inputH = document.getElementById('input-h');
+    const inputM = document.getElementById('input-m');
+    const inputS = document.getElementById('input-s');
+    const inputLabel = document.getElementById('input-label');
+
+    // Alert modal
+    const alertModal = document.getElementById('alert-modal');
+    const modalTitle = document.getElementById('modal-title');
+    const modalTime = document.getElementById('modal-time');
+    const modalStatusText = document.getElementById('modal-status-text');
+    const modalCloseBtn = document.getElementById('modal-close-btn');
+
+    // Web Audio Synthesizer sound generator
+    function playAlertTone(type) {
       if (type === 'silent') return;
       try {
         const AudioCtx = window.AudioContext || window.webkitAudioContext;
         if (!AudioCtx) return;
         const ctx = new AudioCtx();
-
+        
         if (type === 'beep') {
           const osc = ctx.createOscillator();
           const gain = ctx.createGain();
-          osc.connect(gain).connect(ctx.destination);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
           osc.type = 'sine';
           osc.frequency.setValueAtTime(880, ctx.currentTime);
           gain.gain.setValueAtTime(0.15, ctx.currentTime);
@@ -317,347 +324,392 @@
           osc.start();
           osc.stop(ctx.currentTime + 0.3);
         } else if (type === 'chime') {
-          const tones = [523.25, 659.25, 783.99, 1046.50];
-          tones.forEach((freq, index) => {
+          const tones = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+          tones.forEach((freq, idx) => {
             const osc = ctx.createOscillator();
             const gain = ctx.createGain();
-            osc.connect(gain).connect(ctx.destination);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
             osc.type = 'sine';
-            osc.frequency.setValueAtTime(freq, ctx.currentTime + index * 0.08);
-            gain.gain.setValueAtTime(0, ctx.currentTime + index * 0.08);
-            gain.gain.linearRampToValueAtTime(0.1, ctx.currentTime + index * 0.08 + 0.02);
-            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + index * 0.08 + 0.6);
-            osc.start(ctx.currentTime + index * 0.08);
-            osc.stop(ctx.currentTime + index * 0.08 + 0.65);
+            osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.08);
+            gain.gain.setValueAtTime(0, ctx.currentTime + idx * 0.08);
+            gain.gain.linearRampToValueAtTime(0.1, ctx.currentTime + idx * 0.08 + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + idx * 0.08 + 0.6);
+            osc.start(ctx.currentTime + idx * 0.08);
+            osc.stop(ctx.currentTime + idx * 0.08 + 0.65);
           });
         } else if (type === 'pulse') {
           for (let i = 0; i < 4; i++) {
-            const offset = i * 0.18;
+            const delay = i * 0.18;
             const osc = ctx.createOscillator();
             const gain = ctx.createGain();
-            osc.connect(gain).connect(ctx.destination);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
             osc.type = 'triangle';
-            osc.frequency.setValueAtTime(587.33, ctx.currentTime + offset);
-            gain.gain.setValueAtTime(0, ctx.currentTime + offset);
-            gain.gain.linearRampToValueAtTime(0.12, ctx.currentTime + offset + 0.02);
-            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + offset + 0.14);
-            osc.start(ctx.currentTime + offset);
-            osc.stop(ctx.currentTime + offset + 0.15);
+            osc.frequency.setValueAtTime(587.33, ctx.currentTime + delay);
+            gain.gain.setValueAtTime(0, ctx.currentTime + delay);
+            gain.gain.linearRampToValueAtTime(0.12, ctx.currentTime + delay + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + 0.14);
+            osc.start(ctx.currentTime + delay);
+            osc.stop(ctx.currentTime + delay + 0.15);
           }
         }
-      } catch (e) {
-        console.warn(e);
+      } catch (err) {
+        console.warn('AudioContext is blocked or unsupported until gesture interaction:', err);
       }
     }
 
-    // --- PERSISTENCE ---
-    function loadSavedState() {
-      const savedTimer = localStorage.getItem('s_timer_state');
-      const savedSound = localStorage.getItem('s_timer_sound');
-      const savedLabel = localStorage.getItem('s_timer_lbl');
-      const savedLogs = localStorage.getItem('s_timer_logs');
-
-      if (savedTimer) timerState = JSON.parse(savedTimer);
-      if (savedSound) soundType = savedSound;
-      if (savedLabel) labelText = savedLabel;
-      if (savedLogs) alertLogs = JSON.parse(savedLogs);
-
-      timeLeft = getTotalSeconds();
-      updateUI();
+    // Register active service worker via background scheduler
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').then((reg) => {
+        console.log('Worker is listening scope info:', reg.scope);
+      }).catch((e) => console.log('SW setup skipped'));
     }
 
-    function saveState() {
-      localStorage.setItem('s_timer_state', JSON.stringify(timerState));
-      localStorage.setItem('s_timer_sound', soundType);
-      localStorage.setItem('s_timer_lbl', labelText);
-      localStorage.setItem('s_timer_logs', JSON.stringify(alertLogs));
-    }
-
-    function getTotalSeconds() {
-      return timerState.hours * 3600 + timerState.minutes * 60 + timerState.seconds;
-    }
-
-    // --- NAVIGATION ---
-    function switchView(view) {
-      if (view === 'settings') {
-        document.getElementById('main-screen').classList.add('hidden');
-        document.getElementById('settings-screen').classList.remove('hidden');
-        
-        // Load settings values to fields
-        document.getElementById('set-hours').value = timerState.hours || '';
-        document.getElementById('set-minutes').value = timerState.minutes || '';
-        document.getElementById('set-seconds').value = timerState.seconds || '';
-        document.getElementById('set-label').value = labelText;
-        updateSoundButtons(soundType);
-      } else {
-        document.getElementById('settings-screen').classList.add('hidden');
-        document.getElementById('main-screen').classList.remove('hidden');
+    // Browser Notification Requests
+    function requestNotification() {
+      if (!('Notification' in window)) {
+        alert('ご使用のデバイスはプッシュ通知に対応していません。');
+        return;
       }
-    }
-
-    // --- SETTINGS VIEW ACTIONS ---
-    function adjustField(field, amount) {
-      const input = document.getElementById(`set-${field}`);
-      let val = parseInt(input.value || 0, 10);
-      val += amount;
-      
-      if (field === 'hours') {
-        val = Math.max(0, Math.min(240, val));
-      } else {
-        val = Math.max(0, Math.min(59, val));
-      }
-      input.value = val === 0 ? '' : val;
-    }
-
-    function applyPreset(h, m, s) {
-      document.getElementById('set-hours').value = h || '';
-      document.getElementById('set-minutes').value = m || '';
-      document.getElementById('set-seconds').value = s || '';
-    }
-
-    function updateSoundButtons(selected) {
-      const types = ['chime', 'beep', 'pulse', 'silent'];
-      types.forEach(t => {
-        const btn = document.getElementById(`sound-${t}`);
-        if (t === selected) {
-          btn.className = "py-3 px-2 text-xs rounded-xl transition border border-indigo-500 bg-indigo-500/15 text-indigo-300";
+      Notification.requestPermission().then((permission) => {
+        if (permission === 'granted') {
+          alert('🔔 スマホの通知権限が有効になりました！');
         } else {
-          btn.className = "py-3 px-2 text-xs rounded-xl transition border border-slate-850 bg-slate-950 text-slate-400";
+          alert('通知設定がブロックされました。');
         }
       });
     }
 
-    function setAudioAndPlay(type) {
-      soundType = type;
-      updateSoundButtons(type);
-      playSound(type);
-    }
-
-    function saveAndApplySettings() {
-      const h = parseInt(document.getElementById('set-hours').value || 0, 10);
-      const m = parseInt(document.getElementById('set-minutes').value || 0, 10);
-      const s = parseInt(document.getElementById('set-seconds').value || 0, 10);
-      
-      timerState.hours = Math.max(0, Math.min(240, h));
-      timerState.minutes = Math.max(0, Math.min(59, m));
-      timerState.seconds = Math.max(0, Math.min(59, s));
-      
-      if (timerState.hours === 0 && timerState.minutes === 0 && timerState.seconds === 0) {
-        timerState.seconds = 10;
+    // Increments seconds / minutes with limits
+    window.adjustTime = function(unit, amt) {
+      if (unit === 'h') {
+        let val = parseInt(inputH.value, 10) || 0;
+        inputH.value = Math.max(0, Math.min(240, val + amt));
+      } else if (unit === 'm') {
+        let val = parseInt(inputM.value, 10) || 0;
+        inputM.value = Math.max(0, Math.min(59, val + amt));
+      } else if (unit === 's') {
+        let val = parseInt(inputS.value, 10) || 0;
+        inputS.value = Math.max(0, Math.min(59, val + amt));
       }
+    };
+
+    window.applyPreset = function(h, m, s) {
+      inputH.value = h;
+      inputM.value = m;
+      inputS.value = s;
+    };
+
+    window.selectSound = function(soundType) {
+      alertSound = soundType;
+      ['chime', 'beep', 'pulse', 'silent'].forEach((item) => {
+        const btn = document.getElementById(`sound-${item}`);
+        if (item === soundType) {
+          btn.className = "py-2 px-3 text-xs bg-indigo-500/20 border border-indigo-500 text-indigo-300 rounded-xl transition";
+        } else {
+          btn.className = "py-2 px-3 text-xs bg-slate-955 border border-slate-850 text-slate-400 rounded-xl transition";
+        }
+      });
+      playAlertTone(soundType);
+    };
+
+    // UI Formatting functions
+    function formatTimeDisplay(secs) {
+      const h = Math.floor(secs / 3600);
+      const m = Math.floor((secs % 3600) / 60);
+      const s = secs % 60;
       
-      labelText = document.getElementById('set-label').value.trim() || '作業インターバル';
-      
-      // Stop and Reset
-      isRunning = false;
-      clearInterval(timerInterval);
-      loopCount = 0;
-      timeLeft = getTotalSeconds();
-
-      saveState();
-      updateUI();
-      switchView('main');
-    }
-
-    // --- MAIN VIEW TIMER ACTIONS ---
-    function toggleTimer() {
-      if (isRunning) {
-        // Pause timer
-        isRunning = false;
-        clearInterval(timerInterval);
-        document.getElementById('btn-toggle').className = "flex-1 py-4 px-6 rounded-2xl font-semibold text-sm transition-all duration-150 flex items-center justify-center gap-2 text-white shadow-lg bg-indigo-600 hover:bg-indigo-500 active:scale-95";
-        document.getElementById('btn-toggle-text').innerText = "カウントを再開する";
-        document.getElementById('status-hint').innerText = "一時停止中。";
-        updateIcon('btn-toggle', 'play');
-      } else {
-        // Start timer
-        isRunning = true;
-        document.getElementById('btn-toggle').className = "flex-1 py-4 px-6 rounded-2xl font-semibold text-sm transition-all duration-150 flex items-center justify-center gap-2 text-white shadow-lg bg-amber-600 hover:bg-amber-500 active:scale-95";
-        document.getElementById('btn-toggle-text').innerText = "一時停止する";
-        document.getElementById('status-hint').innerText = "カウントダウン中。ゼロになると自動的に再起動します。";
-        updateIcon('btn-toggle', 'pause');
-
-        timerInterval = setInterval(() => {
-          timeLeft--;
-          if (timeLeft <= 0) {
-            triggerAlert();
-            timeLeft = getTotalSeconds(); // Reset immediately for background count
-          }
-          updateDisplayOnly();
-        }, 1000);
-      }
-      updateUI();
-    }
-
-    function resetTimer() {
-      isRunning = false;
-      clearInterval(timerInterval);
-      loopCount = 0;
-      timeLeft = getTotalSeconds();
-      
-      // Reset button class
-      document.getElementById('btn-toggle').className = "flex-1 py-4 px-6 rounded-2xl font-semibold text-sm transition-all duration-150 flex items-center justify-center gap-2 text-white shadow-lg bg-indigo-600 hover:bg-indigo-500 active:scale-95";
-      document.getElementById('btn-toggle-text').innerText = "カウントを開始する";
-      document.getElementById('status-hint').innerText = "開始ボタンを押してスタートしてください。";
-      updateIcon('btn-toggle', 'play');
-
-      updateUI();
-    }
-
-    function triggerAlert() {
-      const now = new Date();
-      const timeString = now.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-      loopCount++;
-
-      // Log it
-      const newLog = {
-        id: Math.random().toString(36).substring(2, 9),
-        time: timeString,
-        label: labelText
-      };
-      alertLogs.unshift(newLog);
-      if (alertLogs.length > 50) alertLogs.pop();
-      saveState();
-
-      // Sound play
-      playSound(soundType);
-
-      // Trigger Alert Overlay Modal
-      document.getElementById('alert-modal-title').innerText = labelText;
-      document.getElementById('alert-complete-time').innerText = timeString;
-      document.getElementById('alert-loop-count').innerText = `${loopCount} 回目`;
-      document.getElementById('alert-overlay').classList.remove('hidden');
-
-      updateUI();
-    }
-
-    function closeAlert() {
-      document.getElementById('alert-overlay').classList.add('hidden');
-    }
-
-    // --- UI UPDATER ENGINE ---
-    function updateUI() {
-      updateDisplayOnly();
-
-      // Show loop count
-      const loopBadge = document.getElementById('loop-badge');
-      if (loopCount > 0) {
-        loopBadge.classList.remove('hidden');
-        document.getElementById('txt-loop-count').innerText = loopCount;
-      } else {
-        loopBadge.classList.add('hidden');
-      }
-
-      // Display Label
-      document.getElementById('txt-display-label').innerText = labelText;
-      
-      // Formatting total setting display title
-      const totalSec = getTotalSeconds();
-      const hr = Math.floor(totalSec / 3600);
-      const mn = Math.floor((totalSec % 3600) / 60);
-      const sc = totalSec % 60;
-      let summaryText = '';
-      if (hr > 0) summaryText += `${hr}時間`;
-      if (mn > 0) summaryText += `${mn}分`;
-      if (sc > 0 || (hr === 0 && mn === 0)) summaryText += `${sc}秒`;
-      document.getElementById('txt-duration-summary').innerText = summaryText;
-
-      // Reset Button disabled state
-      const btnReset = document.getElementById('btn-reset');
-      const isIdle = !isRunning && (timeLeft === getTotalSeconds());
-      if (isIdle) {
-        btnReset.setAttribute('disabled', 'true');
-        btnReset.className = "p-4 rounded-xl bg-slate-950 text-slate-700 border border-slate-900 cursor-not-allowed transition-all duration-150 flex items-center justify-center";
-      } else {
-        btnReset.removeAttribute('disabled');
-        btnReset.className = "p-4 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-850 active:scale-95 text-slate-300 hover:text-slate-100 transition-all duration-150 flex items-center justify-center";
-      }
-
-      // History log render
-      renderHistory();
-    }
-
-    function updateDisplayOnly() {
-      // Time format
-      const h = Math.floor(timeLeft / 3600);
-      const m = Math.floor((timeLeft % 3600) / 60);
-      const s = timeLeft % 60;
-
-      let parts = [
+      const parts = [
         String(m).padStart(2, '0'),
         String(s).padStart(2, '0')
       ];
       if (h > 0) {
         parts.unshift(String(h).padStart(2, '0'));
       }
-      document.getElementById('time-display').innerText = parts.join(':');
-
-      // Update next alert counter on Alert Modal to keep synched
-      const mStr = String(Math.floor((timeLeft % 3600) / 60)).padStart(2, '0');
-      const sStr = String(timeLeft % 60).padStart(2, '0');
-      const containerNext = document.getElementById('alert-next-time');
-      if (containerNext) {
-        containerNext.innerText = `${mStr}:${sStr}`;
-      }
-
-      // Circular Ring logic
-      const total = getTotalSeconds();
-      const pct = total > 0 ? (timeLeft / total) : 0;
-      const progressRing = document.getElementById('progress-ring');
-      const offset = 596.9 * (1 - pct);
-      progressRing.setAttribute('stroke-dashoffset', offset);
+      return parts.join(':');
     }
 
-    function renderHistory() {
-      const placeholder = document.getElementById('history-placeholder');
-      const listContainer = document.getElementById('history-list');
-      const box = document.getElementById('history-box');
-      const clearBtn = document.getElementById('btn-clear-history');
-
-      if (alertLogs.length === 0) {
-        placeholder.classList.remove('hidden');
-        listContainer.classList.add('hidden');
-        clearBtn.classList.add('hidden');
-      } else {
-        placeholder.classList.add('hidden');
-        listContainer.classList.remove('hidden');
-        clearBtn.classList.remove('hidden');
-
-        listContainer.innerHTML = alertLogs.map(log => `
-          <div class="flex items-center justify-between p-2 rounded-lg bg-slate-900 border border-slate-800 text-xs">
-            <div class="flex flex-col">
-              <span class="font-medium text-slate-300">${log.label}</span>
-              <span class="text-[10px] text-slate-500 font-mono">${log.time}</span>
-            </div>
-            <div class="text-[10px] font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-1.5 py-0.5 rounded">
-              完了
-            </div>
-          </div>
-        `).join('');
-      }
+    function formatSettingLabel() {
+      const hStr = Math.floor(totalSeconds / 3600);
+      const mStr = Math.floor((totalSeconds % 3600) / 60);
+      const sStr = totalSeconds % 60;
+      let label = [];
+      if (hStr > 0) label.push(`${hStr}時間`);
+      if (mStr > 0) label.push(`${mStr}分`);
+      if (sStr > 0 || label.length === 0) label.push(`${sStr}秒`);
+      return label.join('');
     }
 
-    function clearHistory() {
-      alertLogs = [];
-      saveState();
-      updateUI();
+    // Refresh UI Graphics
+    function updateProgressArc() {
+      const circumference = 596.9; // 2 * pi * 95
+      const ratio = totalSeconds > 0 ? (timeLeft / totalSeconds) : 0;
+      const strokeDashoffset = circumference * (1 - ratio);
+      progressBar.setAttribute('stroke-dashoffset', strokeDashoffset);
+      timerText.textContent = formatTimeDisplay(timeLeft);
     }
 
-    // Lucide Icons replacement utility inside btn toggles
-    function updateIcon(parentID, iconName) {
-      const parent = document.getElementById(parentID);
-      const icon = parent.querySelector('i');
-      if (icon) {
-        icon.setAttribute('data-lucide', iconName);
-        lucide.createIcons();
-      }
-    }
-
-    // --- INITIALIZATION ---
-    window.onload = () => {
-      loadSavedState();
+    // Main interval trigger loops
+    function startTimer() {
+      isRunning = true;
+      resetBtn.disabled = false;
+      resetBtn.className = "p-3.5 bg-slate-900 border border-slate-800 hover:bg-slate-700 text-slate-100 rounded-xl transition flex items-center justify-center active:scale-95";
+      
+      toggleTimerBtn.className = "flex-1 py-4 px-6 bg-amber-600 hover:bg-amber-550 text-white font-semibold rounded-2xl shadow-lg active:scale-[0.98] transition flex items-center justify-center gap-2";
+      toggleTimerBtn.innerHTML = `<i data-lucide="pause" class="w-5 h-5 fill-current"></i><span>一時停止する</span>`;
+      statusHelper.textContent = "カウントダウン中。経過すると自動的に再起動します。";
       lucide.createIcons();
-    };
+
+      timerInterval = setInterval(() => {
+        if (timeLeft <= 1) {
+          triggerTimeReached();
+          timeLeft = totalSeconds; // Reset instantly and repeat loop natively
+        } else {
+          timeLeft--;
+        }
+        updateProgressArc();
+      }, 1000);
+    }
+
+    function pauseTimer() {
+      isRunning = false;
+      clearInterval(timerInterval);
+      toggleTimerBtn.className = "flex-1 py-4 px-6 bg-indigo-600 hover:bg-indigo-550 text-white font-semibold rounded-2xl shadow-lg active:scale-[0.98] transition flex items-center justify-center gap-2";
+      toggleTimerBtn.innerHTML = `<i data-lucide="play" class="w-5 h-5 fill-current"></i><span>カウントを再開する</span>`;
+      statusHelper.textContent = "一時停止中。";
+      lucide.createIcons();
+    }
+
+    function resetTimer() {
+      isRunning = false;
+      clearInterval(timerInterval);
+      timeLeft = totalSeconds;
+      loopCount = 0;
+      
+      updateProgressArc();
+      loopBadge.classList.add('hidden');
+      
+      resetBtn.disabled = true;
+      resetBtn.className = "p-3.5 bg-slate-950 border border-slate-850 text-slate-705 rounded-xl transition cursor-not-allowed flex items-center justify-center";
+      
+      toggleTimerBtn.className = "flex-1 py-4 px-6 bg-indigo-600 hover:bg-indigo-550 text-white font-semibold rounded-2xl shadow-lg active:scale-[0.98] transition flex items-center justify-center gap-2";
+      toggleTimerBtn.innerHTML = `<i data-lucide="play" class="w-5 h-5 fill-current"></i><span>カウントを開始する</span>`;
+      statusHelper.textContent = "開始ボタンを押してスタートしてください。";
+      lucide.createIcons();
+    }
+
+    // Trigger complete
+    function triggerTimeReached() {
+      loopCount++;
+      const now = new Date();
+      const timeString = now.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+      // Add to logs array
+      const logEntry = {
+        id: Math.random().toString(),
+        time: timeString,
+        label: alertLabel || 'タイマー完了'
+      };
+      logs.unshift(logEntry);
+      updateLogsUI();
+
+      // Show floating loop count badge
+      loopBadge.classList.remove('hidden');
+      loopCountText.textContent = loopCount;
+
+      // Launch physical sound chime
+      playAlertTone(alertSound);
+
+      // Launch screen modal overlay
+      modalTitle.textContent = alertLabel || 'タイマー完了';
+      modalTime.textContent = timeString;
+      alertModal.classList.remove('hidden');
+
+      // Trigger standard webpage browser notification
+      if ('Notification' in window && Notification.permission === 'granted') {
+        const payload = {
+          title: alertLabel || 'タイマー完了',
+          body: `時間が経過しました！（通算 ${loopCount} 回目のリピート完了）`,
+          icon: 'https://cdn-icons-png.flaticon.com/512/3652/3652191.png'
+        };
+
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.ready.then((reg) => {
+            reg.showNotification(payload.title, {
+              body: payload.body,
+              icon: payload.icon,
+              tag: 'running-timer-alert',
+              renotify: true,
+              vibrate: [200, 100, 200]
+            });
+          });
+        } else {
+          new Notification(payload.title, { body: payload.body, icon: payload.icon });
+        }
+      }
+    }
+
+    // Background Tab Visibility sync compensation (Prevents timer slowing down)
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') {
+        if (isRunning) {
+          backgroundTimeStamp = Date.now();
+          
+          // Use Service Worker's background alarm fallback scheduler
+          if ('serviceWorker' in navigator && Notification.permission === 'granted') {
+            navigator.serviceWorker.ready.then((reg) => {
+              reg.active.postMessage({
+                type: 'SCHEDULE_NOTIFICATION',
+                payload: {
+                  delayMs: timeLeft * 1000,
+                  title: alertLabel || 'タイマー完了',
+                  body: '設定した時間が経過しました！',
+                  tag: 'running-timer-alert'
+                }
+              });
+            });
+          }
+        }
+      } else if (document.visibilityState === 'visible') {
+        // Clear active background service timer since user opened active tab
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.ready.then((reg) => {
+            reg.active.postMessage({
+              type: 'CANCEL_SCHEDULE',
+              payload: { tag: 'running-timer-alert' }
+            });
+          });
+        }
+
+        // Compensate difference
+        if (isRunning && backgroundTimeStamp !== null) {
+          const msElapsed = Date.now() - backgroundTimeStamp;
+          const secsElapsed = Math.floor(msElapsed / 1000);
+          backgroundTimeStamp = null;
+
+          if (secsElapsed > 0) {
+            const nextTime = timeLeft - secsElapsed;
+            if (nextTime <= 0) {
+              // Loops passed while screen was locked
+              const completedLoops = Math.floor(Math.abs(nextTime) / totalSeconds) + 1;
+              const remainingVal = totalSeconds - (Math.abs(nextTime) % totalSeconds);
+              
+              loopCount += (completedLoops - 1);
+              triggerTimeReached(); // Increment and notify once
+              timeLeft = remainingVal;
+            } else {
+              timeLeft = nextTime;
+            }
+            updateProgressArc();
+          }
+        }
+      }
+    });
+
+    // Update Logs Rendering inside UI
+    function updateLogsUI() {
+      const listDiv = document.getElementById('logs-list');
+      const noLogsDiv = document.getElementById('no-logs');
+      
+      if (logs.length === 0) {
+        listDiv.classList.add('hidden');
+        noLogsDiv.classList.remove('hidden');
+        return;
+      }
+      
+      noLogsDiv.classList.add('hidden');
+      listDiv.classList.remove('hidden');
+      listDiv.innerHTML = logs.map((log) => `
+        <div class="flex items-center justify-between p-2 rounded-lg bg-slate-905 border border-slate-800 text-xs">
+          <div class="flex flex-col">
+            <span class="font-bold text-slate-300 font-sans">${log.label}</span>
+            <span class="text-[10px] text-slate-500 font-mono mt-0.5">${log.time}</span>
+          </div>
+          <div class="text-[9px] font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-1.5 py-0.5 rounded font-bold">
+            ループ
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Toggle Screen View callback
+    toggleViewBtn.addEventListener('click', () => {
+      if (viewMode === 'main') {
+        viewMode = 'settings';
+        mainScreen.classList.add('hidden');
+        settingsScreen.classList.remove('hidden');
+        toggleViewBtn.innerHTML = `<i data-lucide="arrow-left" class="w-4 h-4"></i><span>戻る</span>`;
+        
+        // Populate inputs based on setting
+        inputH.value = Math.floor(totalSeconds / 3600);
+        inputM.value = Math.floor((totalSeconds % 3600) / 60);
+        inputS.value = totalSeconds % 60;
+        inputLabel.value = alertLabel;
+      } else {
+        viewMode = 'main';
+        settingsScreen.classList.add('hidden');
+        mainScreen.classList.remove('hidden');
+        toggleViewBtn.innerHTML = `<i data-lucide="settings" class="w-4 h-4"></i><span>時間・音設定</span>`;
+      }
+      lucide.createIcons();
+    });
+
+    // Save configuration settings
+    saveSettingsTrigger.addEventListener('click', () => {
+      const h = parseInt(inputH.value, 10) || 0;
+      const m = parseInt(inputM.value, 10) || 0;
+      const s = parseInt(inputS.value, 10) || 0;
+      
+      totalSeconds = h * 3600 + m * 60 + s;
+      if (totalSeconds <= 0) {
+        totalSeconds = 10; // Fail-safe to avoid 0
+      }
+      
+      alertLabel = inputLabel.value || '作業インターバル';
+      labelText.textContent = alertLabel;
+
+      resetTimer(); // Apply new settings dynamically
+
+      // Return to screen
+      viewMode = 'main';
+      settingsScreen.classList.add('hidden');
+      mainScreen.classList.remove('hidden');
+      toggleViewBtn.innerHTML = `<i data-lucide="settings" class="w-4 h-4"></i><span>時間・音設定</span>`;
+      settingText.textContent = formatSettingLabel();
+      lucide.createIcons();
+    });
+
+    // Controls binders
+    toggleTimerBtn.addEventListener('click', () => {
+      // Initialize AudioContext dummy play on iOS touch to unblock system sound gate
+      const dummyCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (dummyCtx.state === 'suspended') {
+        dummyCtx.resume();
+      }
+
+      if (isRunning) {
+        pauseTimer();
+      } else {
+        startTimer();
+      }
+    });
+
+    resetBtn.addEventListener('click', resetTimer);
+    clearLogsBtn.addEventListener('click', () => {
+      logs = [];
+      updateLogsUI();
+    });
+
+    modalCloseBtn.addEventListener('click', () => {
+      alertModal.classList.add('hidden');
+    });
+
+    // Run dynamic vector asset library
+    lucide.createIcons();
+    updateProgressArc();
+    settingText.textContent = formatSettingLabel();
+
   </script>
 </body>
 </html>
